@@ -11,10 +11,11 @@ jobs:
         sdk: [openwrt-24.10, openwrt-25.12]
     steps:
       - uses: actions/checkout@v4
-      - name: Link package into OpenWrt package tree
+      - name: Create feeds.conf.default
         run: |
-          mkdir -p package
-          cp -r luci-app-harbor-file-pro package/luci-app-harbor-file-pro
+          cat > feeds.conf.default <<'EOF'
+          src-link harbor-file-pro $(pwd)/luci-app-harbor-file-pro
+          EOF
 
       - uses: openwrt/gh-action-sdk@v5
         with:
