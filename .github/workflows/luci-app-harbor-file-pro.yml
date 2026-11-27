@@ -5,51 +5,40 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
-      fail-fast: false
       matrix:
         sdk: [openwrt-24.10, openwrt-25.12]
     steps:
-      - uses: actions/checkout@main
-        with:
-          fetch-depth: 0
-
-      - name: Build Packages
-        uses: sbwml/openwrt-gh-action-sdk@go1.26
+      - uses: actions/checkout@v5
+      - uses: openwrt/gh-action-sdk@main
         env:
           ARCH: x86_64-${{ matrix.sdk }}
           FEEDNAME: packages_ci
           PACKAGES: luci-app-harbor-file-pro
           NO_REFRESH_CHECK: true
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@main
+      - uses: actions/upload-artifact@v6
         with:
           name: ipk-${{ matrix.sdk }}
-          path: |
-            bin/packages/x86_64/packages_ci/*.ipk
-            bin/packages/*/packages_ci/*.ipk
+          path: bin/packages/x86_64/packages_ci/*
 
   release:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@main
-
+      - uses: actions/checkout@v5
       - id: ver
         run: echo "tag=v$(awk -F':=' '/^PKG_VERSION:=/{print $2}' luci-app-harbor-file-pro/Makefile)" >> $GITHUB_OUTPUT
-
-      - uses: actions/download-artifact@main
+      - uses: actions/download-artifact@v7
         with:
           path: ipks
           merge-multiple: true
-
       - uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
           name: luci-app-harbor-file-pro ${{ steps.ver.outputs.tag }}
           files: ipks/*
           make_latest: true
+
